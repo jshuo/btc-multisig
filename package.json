@@ -2,7 +2,7 @@
   "name": "@secux/btc-multisig",
   "version": "1.0.0",
   "description": "SecuX Hardware Wallet BTC API - multisig",
-  "main": "index.js",
+  "main": "lib/index.js",
   "publishConfig": {
     "access": "public"
   },
