@@ -32,6 +32,7 @@ async function bitcoinRpcCall(method: string, params: any[]) {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
 		},
 		body: JSON.stringify({
 			jsonrpc: '2.0',

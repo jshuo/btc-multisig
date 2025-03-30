@@ -178,14 +178,36 @@ export async function getWalletBalance(walletId: string) {
 	await generateNewUTXOBlocks(); 
 
 	try {
-		const data = await utils.getAddressBalanceBlockbook(walletData.address);
+			const response = await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+				},
+				body: JSON.stringify({
+					method: 'scantxoutset',
+					params: ['start', [`addr(${walletData.address})`]],
+				}),
+			});
+			
+			if (!response.ok) {
+				throw new Error(`Failed to fetch balance: ${response.statusText}`);
+			}
+			const result = await response.json();
+			const confirmedBalance = result.result.unspents.reduce((sum: number, utxo: { amount: number }) => sum + utxo.amount, 0);
+	
+			const data = {
+				confirmedBalance: confirmedBalance
+			};
+	
+		    await generateNewUTXOBlocks(); 
 
-		return {
-			walletId,
-			address: walletData.address,
-			...data,
-		}
-		await generateNewUTXOBlocks(); 
+			return {
+				walletId,
+				address: walletData.address,
+				...data,
+			}
+			
 	} catch (error: any) {
 		console.error("Error getting balance from RPC:", error);
 		throw new Error(`Failed to get wallet balance: ${error.message}`); // Re-throw with context
