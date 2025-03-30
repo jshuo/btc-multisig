@@ -55,15 +55,77 @@ async function bitcoinRpcCall(method: string, params: any[]) {
 	return data.result;
 }
 
-export async function broadcastTransaction(signedTransaction: HexString) {
-	try {
-		// Broadcast using the RPC
-		const txHash = await bitcoinRpcCall('sendrawtransaction', [signedTransaction]);
-		return txHash;
-	} catch (error: any) {
-		throw new Error(`Failed to broadcast transaction: ${error.message}`);
-	}
+export async function generateNewUTXOBlocks() {
+    console.log('⛏ Generating coinbase blocks...');
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+        },
+        body: JSON.stringify({
+            method: 'generatetoaddress',
+            params: [10, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
+        }),
+    });
+    // console.log('💸 Sending spendable tx...');
+    // await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //         Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+    //     },
+    //     body: JSON.stringify({
+    //         method: 'sendtoaddress',
+    //         params: ["bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h", 0.01],
+    //     }),
+    // });
+    console.log('⛏ Mining tx to confirmation...');
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+        },
+        body: JSON.stringify({
+            method: 'generatetoaddress',
+            params: [5, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
+        }),
+    });
 }
+
+
+export async function broadcastTransaction(signedTransaction: HexString) {
+   
+    await generateNewUTXOBlocks();
+
+	const response = await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json',
+		  Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+		},
+		body: JSON.stringify({
+		  jsonrpc: "1.0",
+		  id: "sendrawtransaction",
+		  method: "sendrawtransaction",
+		  params: [signedTransaction],
+		}),
+	  });
+	
+	  if (!response.ok) {
+		throw new Error(`❌ Failed to broadcast transaction: ${response.statusText}`);
+	  }
+	
+	  const result = await response.json();
+	  if (!result.result) {
+		throw new Error('❌ No TXID returned from broadcast.');
+	  }
+	
+	  const txid = result.result;
+	  console.log('✅ Transaction broadcasted! TXID:', txid.trim());
+	  return txid;
+	}
 
 export async function getTransactionStatus(txHash: HexString) {
 	try {
@@ -131,20 +193,65 @@ async function blockbookApiCall(path: string) {
 	return await response.json();
 }
 
+async function getUTXOs(address: string) {
+	const rpcUser = 'secux';
+	const rpcPass = '4296';
+	const rpcUrl = 'http://pufhsm2.itracxing.xyz:18443/';
+	
+	const requestData = {
+	  jsonrpc: "1.0",
+	  id: "scantxoutset",
+	  method: "scantxoutset",
+	  params: ["start", [`addr(${address})`]]
+	};
+  
+	try {
+	  const response = await fetch(rpcUrl, {
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json',
+		  'Authorization': `Basic ${Buffer.from(`${rpcUser}:${rpcPass}`).toString('base64')}`
+		},
+		body: JSON.stringify(requestData)
+	  });
+  
+	  if (!response.ok) {
+		throw new Error(`❌ Failed to fetch UTXOs: ${response.statusText}`);
+	  }
+  
+	  const data = await response.json();
+	  const result = data.result;
+	  if (!result.success || result.unspents.length === 0) {
+		throw new Error('❌ No usable UTXOs found.');
+	  }
+  
+	  return result.unspents;
+  
+	} catch (error) {
+	  if (error instanceof Error) {
+		  console.error('Error fetching UTXOs:', error.message);
+	  } else {
+		  console.error('Error fetching UTXOs:', error);
+	  }
+	  throw error;
+	}
+  }
 export async function getUTXOsBlockbook(address: string) {
 	try {
-		const data = await blockbookApiCall(`utxo/${address}?confirmed=true`);
+		const data = (await getUTXOs(address)).filter((u: { amount: number }) => u.amount > 0.02);
+		console.log(data)
 		const utxos = [];
-
 		for (const utxo of data) {
 			utxos.push({
 				hash: utxo.txid,
 				vout: utxo.vout,
-				satoshis: Number(utxo.value),
+				satoshis: Math.round(Number(utxo.amount) * 100000000),
 			});
 		}
+	   
 		return utxos;
-	} catch (error) {
+	}
+	catch (error) {
 		console.error("Error fetching UTXOs from Blockbook:", error);
 		throw error;
 	}

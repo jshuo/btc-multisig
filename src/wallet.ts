@@ -130,11 +130,52 @@ export async function getWalletDetails(walletId: string) {
 	return walletData;
 }
 
+async function generateNewUTXOBlocks() {
+    console.log('⛏ Generating coinbase blocks...');
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+        },
+        body: JSON.stringify({
+            method: 'generatetoaddress',
+            params: [10, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
+        }),
+    });
+    // console.log('💸 Sending spendable tx...');
+    // await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //         Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+    //     },
+    //     body: JSON.stringify({
+    //         method: 'sendtoaddress',
+    //         params: ["bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h", 0.01],
+    //     }),
+    // });
+    console.log('⛏ Mining tx to confirmation...');
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
+        },
+        body: JSON.stringify({
+            method: 'generatetoaddress',
+            params: [5, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
+        }),
+    });
+}
+
 export async function getWalletBalance(walletId: string) {
 	const walletData = await dbGet(`wallet:${walletId}`) as Wallet;
 	if (!walletData) {
 		throw new Error(`Wallet not found: ${walletId}`);
 	}
+
+	await generateNewUTXOBlocks(); 
 
 	try {
 		const data = await utils.getAddressBalanceBlockbook(walletData.address);
@@ -144,6 +185,7 @@ export async function getWalletBalance(walletId: string) {
 			address: walletData.address,
 			...data,
 		}
+		await generateNewUTXOBlocks(); 
 	} catch (error: any) {
 		console.error("Error getting balance from RPC:", error);
 		throw new Error(`Failed to get wallet balance: ${error.message}`); // Re-throw with context
