@@ -240,7 +240,6 @@ async function getUTXOs(address: string) {
 export async function getUTXOsBlockbook(address: string) {
 	try {
 		const data = (await getUTXOs(address)).filter((u: { amount: number }) => u.amount > 0.02);
-		console.log(data)
 		const utxos = [];
 		for (const utxo of data) {
 			utxos.push({
