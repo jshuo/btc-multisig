@@ -58,7 +58,7 @@ async function bitcoinRpcCall(method: string, params: any[]) {
 
 export async function generateNewUTXOBlocks() {
     console.log('⛏ Generating coinbase blocks...');
-    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+    await fetch('http://localhost:18443/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -66,31 +66,7 @@ export async function generateNewUTXOBlocks() {
         },
         body: JSON.stringify({
             method: 'generatetoaddress',
-            params: [10, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
-        }),
-    });
-    // console.log('💸 Sending spendable tx...');
-    // await fetch('http://pufhsm2.itracxing.xyz:18443/', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //         Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
-    //     },
-    //     body: JSON.stringify({
-    //         method: 'sendtoaddress',
-    //         params: ["bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h", 0.01],
-    //     }),
-    // });
-    console.log('⛏ Mining tx to confirmation...');
-    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Basic ${Buffer.from('secux:4296').toString('base64')}`,
-        },
-        body: JSON.stringify({
-            method: 'generatetoaddress',
-            params: [5, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
+            params: [1, "bcrt1qafyhjtqtr5nf4f8smskgaryw9u5d2496tnqjcrxeses37n2jarps9qfu6h"],
         }),
     });
 }
@@ -100,7 +76,7 @@ export async function broadcastTransaction(signedTransaction: HexString) {
    
     await generateNewUTXOBlocks();
 
-	const response = await fetch('http://pufhsm2.itracxing.xyz:18443/', {
+	const response = await fetch('http://localhost:18443/', {
 		method: 'POST',
 		headers: {
 		  'Content-Type': 'application/json',
@@ -197,7 +173,7 @@ async function blockbookApiCall(path: string) {
 async function getUTXOs(address: string) {
 	const rpcUser = 'secux';
 	const rpcPass = '4296';
-	const rpcUrl = 'http://pufhsm2.itracxing.xyz:18443/';
+	const rpcUrl = 'http://localhost:18443/';
 	
 	const requestData = {
 	  jsonrpc: "1.0",
