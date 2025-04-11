@@ -247,62 +247,53 @@ export async function getAddressBalanceBlockbook(address: string) {
 }
 
 export async function getAddressTransactions(address: string, page: number) {
-	try {
-		const data = await blockbookApiCall(`address/${address}?details=txslight&page=${page}`);
-		const transactions: Array<{
-			txHash: string,
-			amount: number,
-			fee: number,
-			status: string,
-			confirmationTime?: string,
-			confirmations: number,
-			direction: string
-		}> = [];
+    try {
+        const rpcUser = 'secux';
+        const rpcPass = '4296';
+        const rpcUrl = 'http://127.0.0.1:18443/wallet/test_wallet';
 
-		if (data.transactions) {
-			for (const tx of data.transactions) {
-				let direction = "received"; // Default to "received"
-				let amount = 0;
+        const requestData = {
+            jsonrpc: "1.0",
+            id: "curltest",
+            method: "listtransactions",
+            params: ["*", 10, page * 10]
+        };
 
-				// Check if the wallet address is involved in any of the outputs.
-				for (const vout of tx.vout) {
-					if (vout.addresses && vout.addresses.includes(address)) {
-						amount += Number(vout.value);  // to satoshis.
-					}
-				}
+        const response = await fetch(rpcUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${Buffer.from(`${rpcUser}:${rpcPass}`).toString('base64')}`
+            },
+            body: JSON.stringify(requestData)
+        });
 
-				// check sends
-				let sent_amount = 0
-				for (const vin of tx.vin) {
-					if (vin.txid) {
-						const prevRawTx = await blockbookApiCall(`tx/${vin.txid}`)
-						if (prevRawTx && prevRawTx.vout) {
-							const vout = prevRawTx.vout[vin.vout]
-							if (vout?.addresses && vout.addresses.includes(address)) {
-								sent_amount += Number(vout.value); // to satoshis
-								direction = "sent"
-							}
-						}
-					}
-				}
+        if (!response.ok) {
+            throw new Error(`Failed to fetch transactions: ${response.statusText}`);
+        }
 
-				const simplifiedTx = {
-					txHash: tx.txid,
-					amount: direction === "sent" ? sent_amount : amount,
-					fee: Number(tx.fees),
-					status: tx.confirmations > 0 ? "confirmed" : "unconfirmed",
-					confirmationTime: tx.confirmations > 0 && tx.blockTime ? new Date(tx.blockTime * 1000).toISOString() : undefined,
-					confirmations: tx.confirmations,
-					direction: direction
-				};
-				transactions.push(simplifiedTx);
-			}
-		}
-		return transactions
-	} catch (error) {
-		console.error(`Error fetching transactions for address ${address}:`, error);
-		throw error
-	}
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(`Error from RPC: ${data.error.message}`);
+        }
+
+        const transactions = data.result.map((tx: any) => {
+            return {
+                txHash: tx.txid,
+                amount: tx.amount,
+                fee: tx.fee || 0,
+                status: tx.confirmations > 0 ? "confirmed" : "unconfirmed",
+                confirmationTime: tx.confirmations > 0 && tx.blocktime ? new Date(tx.blocktime * 1000).toISOString() : undefined,
+                confirmations: tx.confirmations,
+                direction: tx.category === "send" ? "sent" : "received"
+            };
+        });
+
+        return transactions;
+    } catch (error) {
+        console.error(`Error fetching transactions for address ${address}:`, error);
+        throw error;
+    }
 }
 
 export async function estimateVirtualSize(walletId: string, recipientAddress: string) {
