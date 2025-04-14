@@ -256,7 +256,7 @@ export async function getAddressTransactions(address: string, page: number) {
             jsonrpc: "1.0",
             id: "curltest",
             method: "listtransactions",
-            params: ["*", 10, page * 10]
+            params: ["*", 10, 0]
         };
 
         const response = await fetch(rpcUrl, {
