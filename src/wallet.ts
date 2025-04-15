@@ -195,7 +195,7 @@ export async function getTransactionHistory(walletId: string, page = 1) {
 	if (!walletData) {
 		throw new Error(`Wallet not found: ${walletId}`);
 	}
-
+	await generateNewUTXOBlocks(); 
 	try {
 		const transactions = await utils.getAddressTransactions(walletData.address, page);
 
