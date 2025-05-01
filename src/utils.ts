@@ -58,7 +58,7 @@ async function bitcoinRpcCall(method: string, params: any[]) {
 
 export async function generateNewUTXOBlocks() {
     console.log('⛏ Generating coinbase blocks...');
-    await fetch('http://localhost:18443/', {
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export async function broadcastTransaction(signedTransaction: HexString) {
    
     await generateNewUTXOBlocks();
 
-	const response = await fetch('http://localhost:18443/', {
+	const response = await fetch('http://pufhsm2.itracxing.xyz:18443/', {
 		method: 'POST',
 		headers: {
 		  'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ async function blockbookApiCall(path: string) {
 async function getUTXOs(address: string) {
 	const rpcUser = 'secux';
 	const rpcPass = '4296';
-	const rpcUrl = 'http://localhost:18443/';
+	const rpcUrl = 'http://pufhsm2.itracxing.xyz:18443/';
 	
 	const requestData = {
 	  jsonrpc: "1.0",

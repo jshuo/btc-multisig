@@ -132,7 +132,7 @@ export async function getWalletDetails(walletId: string) {
 
 async function generateNewUTXOBlocks() {
     console.log('⛏ Generating coinbase blocks...');
-    await fetch('http://localhost:18443/', {
+    await fetch('http://pufhsm2.itracxing.xyz:18443/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ export async function getWalletBalance(walletId: string) {
 	await generateNewUTXOBlocks(); 
 
 	try {
-			const response = await fetch('http://localhost:18443/', {
+			const response = await fetch('http://pufhsm2.itracxing.xyz:18443/', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
