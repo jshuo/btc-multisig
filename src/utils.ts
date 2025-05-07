@@ -347,7 +347,7 @@ export async function estimateVirtualSize(walletId: string, recipientAddress: st
 async function generateId(prefix = "secux_btc_multisig") {
 	const key = `_id:${prefix}`;
 	try {
-		let lastId = await db.get(key);
+		let lastId = await db.get(key) || "0";
 		lastId = (parseInt(lastId, 10) + 1).toString();
 		await db.put(key, lastId);
 		return `${prefix}${lastId.padStart(16, '0')}`; // Pad for consistent length
